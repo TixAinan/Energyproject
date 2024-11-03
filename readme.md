@@ -18,6 +18,7 @@ Decisions might be made just to try out and learn about technologies we haven't 
 
 ###  Prediction ###
 Weather data for each municipality -> 
+Daily Weather data(Temp, wind, wind direction,brigt sunshine) -> Energyproduction(solar, offshorewind,onshorewind, thermal)
 
 ### **Data** ###
 - ClimateData from DMI
