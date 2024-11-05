@@ -21,8 +21,17 @@ Weather data for each municipality ->
 Daily Weather data(Temp, wind, wind direction,brigt sunshine) -> Energyproduction(solar, offshorewind,onshorewind, thermal)
 
 ### **Data** ###
+Will start out by using data with a time-frequency of 1 day and split geographically by municipality
 - ClimateData from DMI
+    - Multiple time-frequencies.
+    - Will use daily.
+    - Original features(dateutc, municipality_id, municipality_name, mean_temp, mean_wind_speed, mean_wind_dir, bright_sunshine mean_relative_hum)
 - Energy production data from Energi Data Service
+    - Production per Municipality per Hour
+        - Transform to daily
+    - Time from January 2021 -> 27 Oct 2024
+    - Original features(HourUTC, HourDK, MunicipalityNo, Solar, Offshorewind_lt_100mw, Offshorewind_ge_100mw, onshoreewind, thermalpower)
+        - Unit is MWh
 
 ### **Preprocessing** ### 
 

@@ -22,16 +22,18 @@ db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 key = os.getenv("KEY")
 
-limit = 50000
+limit = 100000
 api_url = "https://dmigw.govcloud.dk/v2/climateData/collections/municipalityValue/items"
-paramIds = ['mean_temp', 'mean_wind_speed', 'mean_wind_dir', 'bright_sunshine']
-keys = ['from','municipalityName','value']
+paramIds = ['mean_temp', 'mean_wind_speed', 'mean_wind_dir', 'bright_sunshine', 'mean_relative_hum']
 offset = 0
 start_date = '2021-01-01T00:00:00'
-end_date = '2021-06-01T00:00:00'
+end_date = '2021-12-31T00:00:00'
 
 def construct_api_url(url, key, offset, limit, start_date, end_date, paramId)-> str:
     return f"{url}?api-key={key}&offset={offset}&limit={limit}&datetime={start_date}Z/{end_date}Z&timeResolution=day&parameterId={paramId}"
+
+print(construct_api_url(api_url, key, offset, limit, start_date, end_date, 'mean_temp'))
+
 
 def fetch_data_from_api(url: str):
     response = requests.get(url)
@@ -86,12 +88,8 @@ merged_df = merged_df.rename(columns={'properties.from': 'dateutc',
 
 
 #validating number of days
-merged_df['properties.from'].nunique()
-
-#add a proper check. Unittesting?
-
+print(f"Number of unique days: {merged_df['dateutc'].nunique()}")
 #validating number of municipalities
-merged_df['municipality_id'].nunique()
-
+print(f"Number of municipalities: {merged_df['municipality_id'].nunique()}")
 #add a proper check. Unittesting?
-
+print(f"Number of rows: {len(merged_df)}")
