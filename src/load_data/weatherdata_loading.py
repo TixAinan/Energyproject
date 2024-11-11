@@ -42,6 +42,7 @@ def fetch_data_from_api(url: str):
 
 
 def parse_weather_data(features, paramId)-> pd.DataFrame:
+    """Move data fra JSON to pd.df, renames and drops columns"""
     if not features:
         print("No data found in response.")
         return pd.DataFrame()  
@@ -59,7 +60,7 @@ def parse_weather_data(features, paramId)-> pd.DataFrame:
     return df
 
 
-def load_weather_data(url, offset, start_date, end_date, limit, key, paramId):
+def load_weather_data(url, offset, start_date, end_date, limit, key, paramId)-> pd.DataFrame:
     """Main function to load weather data from the API."""
     api_url = construct_api_url(url, key, offset, limit, start_date, end_date, paramId)
     print("Requesting URL:", api_url)
@@ -72,7 +73,7 @@ def load_weather_data(url, offset, start_date, end_date, limit, key, paramId):
 
 merged_df = pd.DataFrame()
 
-for paramId in paramIds:
+for paramId in paramIds: # the dmi api can only get data from one weather feature at a time. loops and merges dataframes
     df = load_weather_data(api_url, offset, start_date, end_date, limit, key, paramId)
 
     if merged_df.empty:
@@ -82,6 +83,8 @@ for paramId in paramIds:
 
 merged_df.head()
 merged_df.columns
+
+# renames columns
 merged_df = merged_df.rename(columns={'properties.from': 'dateutc', 
                                       'properties.municipalityId': 'municipality_id', 
                                       'properties.municipalityName': 'municipality_name'})
