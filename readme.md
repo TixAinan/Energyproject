@@ -9,12 +9,13 @@ Decisions might be made just to try out and learn about technologies we haven't 
 
 **Possible technologies** 
 - Data storage: SQL Server, maybe Azure?
-- Data analysis and manipulation: SQL and Pandas
+- Data analysis and manipulation: SQL and Pandas(Polars instead?)
 - Machine Learning: XGBoost
 - Deep Learning: Pytorch, Huggingface
 - Model & Data Tracking: MLflow
 - Containerizer: Docker
 - Webframework: Django, Streamlit, FastAPI, Flask
+
 
 ###  Prediction ###
 Weather data for each municipality -> 
@@ -33,6 +34,8 @@ Will start out by using data with a time-frequency of 1 day and split geographic
     - Original features(HourUTC, HourDK, MunicipalityNo, Solar, Offshorewind_lt_100mw, Offshorewind_ge_100mw, onshoreewind, thermalpower)
         - Unit is MWh
 
+
+
 ### **Preprocessing** ### 
 
 ### **Analysis** ###
@@ -44,4 +47,15 @@ Will start out by using data with a time-frequency of 1 day and split geographic
 ### **Webapp** ###
 
 
+### Environment ###
+To create the environment from .yml
 
+```bash
+conda env create -f environment.yml
+``` 
+
+To update the .yml
+
+```bash
+conda env export > environment.yml
+```
