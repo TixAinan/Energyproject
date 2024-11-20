@@ -1,4 +1,4 @@
 [project]
 name = "energyproject"
 [tool.ruff]
-line-length = 140
+line-length = 120

@@ -1,16 +1,13 @@
 import os
 import sys
-
 from typing import Union
 
 import mysql.connector
 import pandas as pd
 import requests
-
 from dotenv import load_dotenv
-from mysql.connector.pooling import PooledMySQLConnection
 from mysql.connector.abstracts import MySQLConnectionAbstract
-
+from mysql.connector.pooling import PooledMySQLConnection
 
 sys.path.append("src")
 
@@ -148,7 +145,10 @@ def create_table(connection: Union[PooledMySQLConnection, MySQLConnectionAbstrac
 
 
 def insert_energydata_into_table(
-    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract], df: pd.DataFrame, insert_query: str, batch_size: int
+    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract],
+    df: pd.DataFrame,
+    insert_query: str,
+    batch_size: int,
 ) -> None:
     cursor = connection.cursor()
     INSERT_DATA_QUERY = insert_query
