@@ -177,14 +177,17 @@ def transform_data(data: pd.DataFrame) -> pd.DataFrame:
         data["HourUTC"] = data["HourUTC"].dt.date
         data = data.rename(columns={"HourUTC": "Date"})
         data = data.drop(columns="HourDK", errors="ignore")
+
         # The api includes the last hour of the day before the start date. The following removes this.
         data = data.sort_values(by="Date")
         first_date = data.iloc[0]["Date"]
         data = data[data["Date"] != first_date]
+
         # transforms datatypes to numeric as its needed for grouping to daily
         to_numeric_columns = [col for col in data.columns if not col.endswith("Date")]
         data[to_numeric_columns] = data[to_numeric_columns].apply(pd.to_numeric, errors="coerce")
         mwh_columns = [col for col in data.columns if col.endswith("MWh")]
+
         # Tranform from hourly to daily
         data = data.groupby(["Date", "MunicipalityNo"])[mwh_columns].agg("sum")
         data = data.reset_index()  # needed to get back hour and municipality columns
@@ -193,37 +196,6 @@ def transform_data(data: pd.DataFrame) -> pd.DataFrame:
     else:
         print("Dataframe is empty")
 
-
-"""
-# TODO Delete this when pipeline works
-api_url = construct_energy_api_url(eds_url, offset, start_date, end_date)
-print(api_url)
-df = get_data_from_api(api_url)
-df = df.replace({float("nan"): None})  # replace nan with None
-# Tranform from hourly to daily
-df["HourUTC"] = pd.to_datetime(df["HourUTC"])
-df["HourUTC"] = df["HourUTC"].dt.date
-df = df.rename(columns={"HourUTC": "Date"})
-df.head()
-df = df.sort_values(by="Date")
-df.head()
-first_date = df.iloc[0]["Date"]
-df = df[df["Date"] != first_date]
-df = df.drop(columns="HourDK", errors="ignore")
-to_numeric_columns = [
-    col for col in df.columns if not col.endswith("UTC")
-]  # transforms datatypes to numeric as its needed for grouping to daily
-df[to_numeric_columns] = df[to_numeric_columns].apply(
-    pd.to_numeric, errors="coerce"
-)  # transforms datatypes to numeric as its needed for grouping to daily
-mwh_columns = [col for col in df.columns if col.endswith("MWh")]
-# Tranform from hourly to daily
-df = df.groupby(["HourUTC", "MunicipalityNo"])[mwh_columns].agg("sum")
-df = df.reset_index()  # needed to get back hour and municipality columns
-
-df.head()
-##############
-"""
 
 if __name__ == "__main__":
     run_data_pipeline(
