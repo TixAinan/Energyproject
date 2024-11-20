@@ -24,10 +24,10 @@ db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 
 ## Define the data we want from the api
-eds_url = "https://api.energidataservice.dk/dataset/ProductionMunicipalityHour?"
-offset = 0
-start_date = "2022-01-02T00:00"  # Must be of from year-mm-ddThh:mm
-end_date = "2022-01-04T00:00"  # Must be of from year-mm-ddThh:mm
+eds_url: str = "https://api.energidataservice.dk/dataset/ProductionMunicipalityHour?"
+offset: int = 0
+start_date: str = "2022-01-02T00:00"  # Must be of from year-mm-ddThh:mm
+end_date: str = "2022-01-04T00:00"  # Must be of from year-mm-ddThh:mm
 
 
 def run_data_pipeline(

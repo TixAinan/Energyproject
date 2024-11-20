@@ -1,6 +1,10 @@
-from dotenv import load_dotenv
 import sys
 import os
+from dotenv import load_dotenv
+
+
+from typing import Union
+
 import requests
 import mysql.connector
 import pandas as pd
@@ -17,12 +21,12 @@ db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 key = os.getenv("KEY")
 
-limit = 100000
-api_url = "https://dmigw.govcloud.dk/v2/climateData/collections/municipalityValue/items"
-paramIds = ["mean_temp", "mean_wind_speed", "mean_wind_dir", "bright_sunshine", "mean_relative_hum"]
-offset = 0
-start_date = "2021-01-01T00:00:00"
-end_date = "2021-01-31T00:00:00"  # remember correct number of days pr month.
+limit: int = 100000
+api_url: str = "https://dmigw.govcloud.dk/v2/climateData/collections/municipalityValue/items"
+paramIds: list = ["mean_temp", "mean_wind_speed", "mean_wind_dir", "bright_sunshine", "mean_relative_hum"]
+offset: int = 0
+start_date: str = "2021-01-01T00:00:00"
+end_date: str = "2021-01-31T00:00:00"  # remember correct number of days pr month.
 
 #! ADD TYPESETTING
 
@@ -37,28 +41,33 @@ except mysql.connector.Error as err:
     print(f"Error: {err}")
 
 
-def construct_api_url(url, key, offset, limit, start_date, end_date, paramId) -> str:
+def construct_api_url(url: str, key: str, offset: int, limit: int, start_date: str, end_date: str, paramId: str) -> str:
     return f"{url}?api-key={key}&offset={offset}&limit={limit}&datetime={start_date}Z/{end_date}Z&timeResolution=day&parameterId={paramId}"
 
 
-def fetch_data_from_api(url: str):
+def get_data_from_api(url: str) -> pd.DataFrame:
+    """Requests data from api_url. If succesfull transforms data from json to pd.DataFrame. If not returns an empty pd.DataFrame"""
     response = requests.get(url)
     if response.status_code == 200:
         response.raise_for_status()
-        return response.json()
+        response = response.json()
+        features = response.get("features")
+        df = pd.json_normalize(features)
+        return df
     else:
         print(f"Failed to fetch data from API: {response.status_code}")
-        return None  # Return None on failure
+        return pd.DataFrame()  # Return Empty DataFrame on failure
 
 
-def parse_transform_weather_data(features, paramId) -> pd.DataFrame:
-    """Move data fra JSON to pd.df, renames and drops columns"""
-    if not features:
+def rename_and_drop_columns(dataframe: pd.DataFrame, paramId: str) -> pd.DataFrame:
+    """Rename columns to remove the "properties." part. Drops unneeded columns"""
+    if dataframe.empty:
         print("No data found in response.")
         return pd.DataFrame()
 
-    df = pd.json_normalize(features)
-    df = df.rename(columns={"properties.value": paramId})  # renames the value column or there will be multiple value columns when merged.
+    df = dataframe.rename(
+        columns={"properties.value": paramId}
+    )  # renames the value column or there will be multiple value columns when merged.
 
     columns_to_drop = [
         "id",
@@ -77,29 +86,34 @@ def parse_transform_weather_data(features, paramId) -> pd.DataFrame:
     return df
 
 
-def load_weather_data(url, offset, start_date, end_date, limit, key, paramId) -> pd.DataFrame:
+def load_weather_data(
+    url: str, offset: int, start_date: str, end_date: str, limit: int, key: Union[str, None], paramId: str
+) -> pd.DataFrame:
     """Main function to load weather data from the API."""
     api_url = construct_api_url(url, key, offset, limit, start_date, end_date, paramId)
     print("Requesting URL:", api_url)
 
-    result = fetch_data_from_api(api_url)
-    features = result.get("features")
+    data = get_data_from_api(api_url)
+    data = rename_and_drop_columns(data, paramId)
 
-    return parse_transform_weather_data(features, paramId)
+    return data
 
 
-merged_df = pd.DataFrame()
-
-for paramId in paramIds:  # the dmi api can only get data from one weather feature at a time. loops and merges dataframes
-    df = load_weather_data(api_url, offset, start_date, end_date, limit, key, paramId)
+def merge_dataframes(paramIds: list) -> pd.DataFrame:
+    """It is only possible to request on parameter at a time from the API. This functions loads data for each parameter.
+    Creates the dataframes for each and merges them.
+    """
+    merged_df = pd.DataFrame()
+    for paramId in paramIds:  # the dmi api can only get data from one weather feature at a time. loops and merges dataframes
+        print(f"Currently requesting: {paramId}")
+        df = load_weather_data(api_url, offset, start_date, end_date, limit, key, paramId)
 
     if merged_df.empty:
         merged_df = df
     else:
         merged_df = merged_df.merge(df, on=["properties.from", "properties.municipalityId", "properties.municipalityName"])
+    return merged_df
 
-merged_df.head()
-merged_df.columns
 
 # renames columns
 merged_df = merged_df.rename(
