@@ -1,5 +1,6 @@
 import torch
 
+
 def check_cuda():
     if torch.cuda.is_available():
         print("CUDA is available!")
@@ -8,5 +9,6 @@ def check_cuda():
         print(f"CUDA version: {torch.version.cuda}")
     else:
         print("CUDA is not available.")
+
 
 check_cuda()

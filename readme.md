@@ -8,13 +8,13 @@ This means setting up APIs to get data, preprocessing and analyzing data, traini
 Decisions might be made just to try out and learn about technologies we haven't used, even if it might not be optimal.
 
 **Possible technologies** 
-- Data storage: SQL Server, maybe Azure?
+- Data storage: Local Postgresql database 
 - Data analysis and manipulation: SQL and Pandas(Polars instead?)
 - Machine Learning: XGBoost
 - Deep Learning: Pytorch, Huggingface
 - Model & Data Tracking: MLflow
 - Containerizer: Docker
-- Webframework: Django, Streamlit, FastAPI, Flask
+- Webframework: One of Django, Streamlit, FastAPI or Flask 
 
 
 ###  Prediction ###

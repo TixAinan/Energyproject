@@ -23,13 +23,22 @@ key: str | None = os.getenv("KEY")
 
 limit: int = 10000
 api_url: str = "https://dmigw.govcloud.dk/v2/climateData/collections/municipalityValue/items"
-paramIds: list = ["mean_temp", "mean_wind_speed", "mean_wind_dir", "bright_sunshine", "mean_relative_hum"]
+paramIds: list = [
+    "mean_temp",
+    "mean_wind_speed",
+    "mean_wind_dir",
+    "bright_sunshine",
+    "mean_relative_hum",
+]
 offset: int = 0
 start_date: str = "2021-01-01T00:00:00"
-end_date: str = "2021-01-31T00:00:00"  # remember correct number of days pr month.
+end_date: str = (
+    "2021-01-31T00:00:00"  # remember correct number of days pr month.
+)
+
+# TODO Remove print statements to increase performance, when sure everything works
 
 
-#! FIX LOAD AND MERGE: Currently drops all but the last paramid
 def run_data_pipeline(
     key: str | None,
     limit: int,
@@ -42,9 +51,13 @@ def run_data_pipeline(
     """ETL Pipeline. load_merge_dataframes loops over the paramids to request data, create and merge dataframes,
     as its not possible to request more than one weather parameter at a time"""
     # check if connection to db is possible
-    connection = create_db_connection(db_host, db_user, db_password, db_name, db_port)
+    connection = create_db_connection(
+        db_host, db_user, db_password, db_name, db_port
+    )
     check_db_connection(connection)
-    df = load_merge_dataframes(api_url, offset, start_date, end_date, limit, key, paramIds)
+    df = load_merge_dataframes(
+        api_url, offset, start_date, end_date, limit, key, paramIds
+    )
     df = rename_columns_in_merged(df)
     print(df.head())
     print(df.columns)
@@ -81,17 +94,32 @@ def create_db_connection(
     return connection
 
 
-def check_db_connection(connection: Union[PooledMySQLConnection, MySQLConnectionAbstract]) -> None:
+def check_db_connection(
+    connection: Union[
+        PooledMySQLConnection,
+        MySQLConnectionAbstract,
+    ],
+) -> None:
     if not connection.is_connected():
-        raise mysql.connector.InterfaceError("Not connected to database, Interface error")
+        raise mysql.connector.InterfaceError(
+            "Not connected to database, Interface error"
+        )
 
 
-def close_db_connection(connection: Union[PooledMySQLConnection, MySQLConnectionAbstract]) -> None:
+def close_db_connection(
+    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract],
+) -> None:
     connection.close()
 
 
 def construct_api_url(
-    url: str, key: str | None, offset: int, limit: int, start_date: str, end_date: str, paramId: str
+    url: str,
+    key: str | None,
+    offset: int,
+    limit: int,
+    start_date: str,
+    end_date: str,
+    paramId: str,
 ) -> str:
     return f"{url}?api-key={key}&offset={offset}&limit={limit}&datetime={start_date}Z/{end_date}Z&timeResolution=day&parameterId={paramId}"
 
@@ -110,7 +138,9 @@ def get_data_from_api(url: str) -> pd.DataFrame:
         return pd.DataFrame()  # Return Empty DataFrame on failure
 
 
-def rename_and_drop_columns(dataframe: pd.DataFrame, paramId: str) -> pd.DataFrame:
+def rename_and_drop_columns(
+    dataframe: pd.DataFrame, paramId: str
+) -> pd.DataFrame:
     """Rename columns to remove the "properties." part. Drops unneeded columns"""
     if dataframe.empty:
         print("No data found in response.")
@@ -138,10 +168,18 @@ def rename_and_drop_columns(dataframe: pd.DataFrame, paramId: str) -> pd.DataFra
 
 
 def load_weather_data(
-    url: str, offset: int, start_date: str, end_date: str, limit: int, key: str | None, paramId: str
+    url: str,
+    offset: int,
+    start_date: str,
+    end_date: str,
+    limit: int,
+    key: str | None,
+    paramId: str,
 ) -> pd.DataFrame:
     """Main function to load weather data from the API."""
-    api_url = construct_api_url(url, key, offset, limit, start_date, end_date, paramId)
+    api_url = construct_api_url(
+        url, key, offset, limit, start_date, end_date, paramId
+    )
     print("Requesting URL:", api_url)
 
     data = get_data_from_api(api_url)
@@ -151,23 +189,36 @@ def load_weather_data(
 
 
 def load_merge_dataframes(
-    api_url: str, offset: int, start_date: str, end_date: str, limit: int, key: str | None, paramIds: list
+    api_url: str,
+    offset: int,
+    start_date: str,
+    end_date: str,
+    limit: int,
+    key: str | None,
+    paramIds: list,
 ) -> pd.DataFrame:
     """It is only possible to request on parameter at a time from the API. This functions loads data for each parameter.
     Creates the dataframes for each and merges them.
     """
     merged_df = pd.DataFrame()
-    for (
-        paramId
-    ) in paramIds:  # the dmi api can only get data from one weather feature at a time. loops and merges dataframes
+    # the dmi api can only get data from one weather feature at a time. loops and merges dataframes
+    for paramId in paramIds:
         print(f"Currently requesting: {paramId}")
-        df = load_weather_data(api_url, offset, start_date, end_date, limit, key, paramId)
-    if merged_df.empty:
-        merged_df = df
-    else:
-        merged_df = merged_df.merge(
-            df, on=["properties.from", "properties.municipalityId", "properties.municipalityName"]
+        df = load_weather_data(
+            api_url, offset, start_date, end_date, limit, key, paramId
         )
+
+        if merged_df.empty:
+            merged_df = df
+        else:
+            merged_df = merged_df.merge(
+                df,
+                on=[
+                    "properties.from",
+                    "properties.municipalityId",
+                    "properties.municipalityName",
+                ],
+            )
     return merged_df
 
 

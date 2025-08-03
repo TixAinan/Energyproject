@@ -1,4 +1,4 @@
-import os
+import os  # noqa: INP001, D100
 import sys
 from typing import Union
 
@@ -21,7 +21,9 @@ db_name = os.getenv("DB_NAME")
 db_port = os.getenv("DB_PORT")
 
 ## Define the data we want from the api
-eds_url: str = "https://api.energidataservice.dk/dataset/ProductionMunicipalityHour?"
+eds_url: str = (
+    "https://api.energidataservice.dk/dataset/ProductionMunicipalityHour?"
+)
 offset: int = 0
 start_date: str = "2022-01-02T00:00"  # Must be of from year-mm-ddThh:mm
 end_date: str = "2022-01-04T00:00"  # Must be of from year-mm-ddThh:mm
@@ -36,8 +38,7 @@ def run_data_pipeline(
     end_date: str,
     batch_size: int,
 ) -> None:
-    """Execute ETL pipeline. Connects to database. Gets data from api. Creates tables and inserts data"""
-
+    """Execute ETL pipeline. Connects to database. Gets data from api. Creates tables and inserts data."""
     connection = create_db_connection()
     check_db_connection(connection)
     api_url = construct_energy_api_url(url, offset, start_date, end_date)
@@ -115,20 +116,31 @@ def create_db_connection(
     return connection
 
 
-def check_db_connection(connection: Union[PooledMySQLConnection, MySQLConnectionAbstract]) -> None:
+def check_db_connection(
+    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract],
+) -> None:
     if not connection.is_connected():
-        raise mysql.connector.InterfaceError("Not connected to database, Interface error")
+        raise mysql.connector.InterfaceError(
+            "Not connected to database, Interface error"
+        )
 
 
-def close_db_connection(connection: Union[PooledMySQLConnection, MySQLConnectionAbstract]) -> None:
+def close_db_connection(
+    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract],
+) -> None:
     connection.close()
 
 
-def construct_energy_api_url(url: str, offset: int, start_date: str, end_date: str) -> str:
+def construct_energy_api_url(
+    url: str, offset: int, start_date: str, end_date: str
+) -> str:
     return f"{url}offset={offset}&start={start_date}&end={end_date}&sort=HourUTC%20DESC"
 
 
-def create_table(connection: Union[PooledMySQLConnection, MySQLConnectionAbstract], query: str) -> None:
+def create_table(
+    connection: Union[PooledMySQLConnection, MySQLConnectionAbstract],
+    query: str,
+) -> None:
     """Create a table if it does not exist in the Mysql Database"""
 
     CREATE_TABLE_SQL_QUERY = query
@@ -178,19 +190,25 @@ def transform_data(data: pd.DataFrame) -> pd.DataFrame:
         data = data.rename(columns={"HourUTC": "Date"})
         data = data.drop(columns="HourDK", errors="ignore")
 
-        # The api includes the last hour of the day before the start date. The following removes this.
+        # The api includes the last hour      of the day before the start date. The following removes this.
         data = data.sort_values(by="Date")
         first_date = data.iloc[0]["Date"]
         data = data[data["Date"] != first_date]
 
         # transforms datatypes to numeric as its needed for grouping to daily
-        to_numeric_columns = [col for col in data.columns if not col.endswith("Date")]
-        data[to_numeric_columns] = data[to_numeric_columns].apply(pd.to_numeric, errors="coerce")
+        to_numeric_columns = [
+            col for col in data.columns if not col.endswith("Date")
+        ]
+        data[to_numeric_columns] = data[to_numeric_columns].apply(
+            pd.to_numeric, errors="coerce"
+        )
         mwh_columns = [col for col in data.columns if col.endswith("MWh")]
 
         # Tranform from hourly to daily
         data = data.groupby(["Date", "MunicipalityNo"])[mwh_columns].agg("sum")
-        data = data.reset_index()  # needed to get back hour and municipality columns
+        data = (
+            data.reset_index()
+        )  # needed to get back hour and municipality columns
 
         return data
     else:
